@@ -22,11 +22,37 @@ import { courses_index, courses_show, courses_store, courses_bulk_store, courses
 import { getInstructorCourses, createClassroom } from "./Instructor/instructor.js";
 import { getInstructorClassrooms, search_students, schedule, getClassroomDetail } from "./Instructor/classrooms.js"
 import { classroom_members_add, getMembersClassroom, classroom_members_remove } from "./Instructor/classroomMembers.js"
-import { getDate,getManualAttendance,saveManualAttendance } from "./Instructor/attendance.js"
+import { getDate, getManualAttendance, saveManualAttendance } from "./Instructor/attendance.js"
+
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-app.use(cors());
+// ----------------------------------------------------
+// 💡 แก้ไข CORS: กำหนดค่า CORS ให้ใช้ Whitelist
+// ----------------------------------------------------
+const allowedOrigins = [
+  'http://localhost:5173', // สำหรับการทดสอบในเครื่อง Local
+  'https://magical-sprite-11874c.netlify.app' // **โดเมน Frontend ของคุณ**
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // อนุญาตถ้า origin อยู่ใน Whitelist หรือไม่มี origin (เช่น การเรียกจาก Postman หรือ Server)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // อนุญาต Methods ที่จำเป็น
+  credentials: true // อนุญาตให้ส่ง Cookies/Authorization Headers
+};
+
+// ใช้ CORS Middleware พร้อมกำหนดค่า
+app.use(cors(corsOptions));
+// ----------------------------------------------------
+
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -35,19 +61,19 @@ app.use("/Image", express.static(path.resolve("Image")));
 
 
 // -------------------------
-//       AUTH
+//       AUTH
 // -------------------------
 app.post("/login", login);
 
 
 // -------------------------
-//       ROLES
+//       ROLES
 // -------------------------
 app.get("/roles", roles_index);
 
 
 // -------------------------
-//       FACULTIES
+//       FACULTIES
 // -------------------------
 app.get("/faculties", faculty_index);
 app.post("/faculties_store", authRequired, faculty_store);
@@ -56,7 +82,7 @@ app.delete("/faculties/:id", authRequired, faculty_destroy);
 
 
 // -------------------------
-//       DEPARTMENTS
+//       DEPARTMENTS
 // -------------------------
 app.get("/departments", department_index);
 app.post("/departments", authRequired, department_store);
@@ -65,7 +91,7 @@ app.delete("/departments/:id", authRequired, department_destroy);
 
 
 // -------------------------
-//       USERS (Admin Only)
+//       USERS (Admin Only)
 // -------------------------
 app.get("/users", authRequired, users_index);
 app.post("/users", authRequired, users_store);
@@ -74,7 +100,7 @@ app.delete("/users/:id", authRequired, users_destroy);
 app.get("/users/bulk", authRequired, users_bulk)
 
 // -------------------------
-//       PROFILE
+//       PROFILE
 // -------------------------
 
 // ดึงข้อมูลของ userId (ADMIN หรือ เจ้าของบัญชีเข้าได้)
@@ -102,7 +128,7 @@ app.get("/admin/getInstructor", authRequired, getInstructor);
 
 
 // -------------------------
-//       instructor
+//       instructor
 // -------------------------
 app.get("/instructor/courses", authRequired, getInstructorCourses)
 app.post("/instructor/classroom/create", authRequired, createClassroom)
@@ -119,7 +145,7 @@ app.put("/instructor/:id/schedule", authRequired, schedule)
 app.get("/classrooms/:id", authRequired, getClassroomDetail)
 app.get("/classroom/:id/attendance/dates", authRequired, getDate)
 // -------------------------
-//       ATTENDANCE (manual)
+//       ATTENDANCE (manual)
 // -------------------------
 
 // ดึงวันที่ที่เคยเช็คชื่อแล้วของห้องนี้
